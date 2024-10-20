@@ -12,7 +12,7 @@ class MotionManager: ObservableObject {
 
     func startMotionUpdates() {
         if motionManager.isDeviceMotionAvailable {
-            motionManager.deviceMotionUpdateInterval = 1.0 / 30.0  // Reduced update frequency
+            motionManager.deviceMotionUpdateInterval = 1.0 / 30.0
             motionManager.startDeviceMotionUpdates(to: .main) { (motion, error) in
                 if let motion = motion {
                     self.pitch = motion.attitude.pitch
@@ -26,6 +26,19 @@ class MotionManager: ObservableObject {
 struct PokemonCardView: View {
     @StateObject private var motion = MotionManager()
     @StateObject private var networkManager = NetworkManager()
+    @State private var currentCardURL: String?
+    @State private var nextCardURL: String?
+    @State private var currentLocalAsset: String?
+    @State private var useLocalAssets: Bool = false
+    @State private var isLoadingNetworkImage: Bool = false
+    @State private var currentPatternShape: PatternShape = .diamond
+    @State private var nextPatternShape: PatternShape = .diamond
+    @State private var isNewCardFullyLoaded: Bool = true
+    @State private var currentImage: UIImage?
+    @State private var nextImage: UIImage?
+    
+    // List of local asset names
+    private let localAssets = ["Charizard", "CharizardVmax", "DragapultVmax", "Eevee", "Gengar", "Obstagoon", "Steelix", "LugiaV", "KinglerVmax", "Mewtwo", "PikachuVmax"]
     
     func gradientOffset(for value: Double) -> CGFloat {
         return CGFloat(value * 0.4)
@@ -38,16 +51,75 @@ struct PokemonCardView: View {
     }
     
     func fetchNewCard() {
-        networkManager.fetchRandomPokemonCard()
+        guard !isLoadingNetworkImage && isNewCardFullyLoaded else { return }
+        
+        isNewCardFullyLoaded = false
+        nextPatternShape = PatternShape.random()
+        
+        if useLocalAssets {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                currentLocalAsset = localAssets.randomElement()
+                currentCardURL = nil
+                currentImage = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    currentPatternShape = nextPatternShape
+                    isNewCardFullyLoaded = true
+                }
+            }
+        } else {
+            isLoadingNetworkImage = true
+            networkManager.fetchRandomPokemonCard()
+        }
+    }
+    
+    private func loadNetworkImage(from url: String) {
+        guard let imageURL = URL(string: url) else {
+            isLoadingNetworkImage = false
+            return
+        }
+        
+        URLSession.shared.dataTask(with: imageURL) { data, response, error in
+            if let data = data, let image = UIImage(data: data) {
+                DispatchQueue.main.async {
+                    self.nextImage = image
+                    withAnimation(.easeInOut(duration: 0.5)) {
+                        self.currentImage = image
+                        self.currentCardURL = url
+                        self.currentLocalAsset = nil
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        self.currentPatternShape = self.nextPatternShape
+                        self.isNewCardFullyLoaded = true
+                        self.isLoadingNetworkImage = false
+                    }
+                }
+            } else {
+                DispatchQueue.main.async {
+                    self.isLoadingNetworkImage = false
+                }
+            }
+        }.resume()
     }
     
     var body: some View {
         VStack {
+            Toggle("Use Local Assets", isOn: $useLocalAssets)
+                .padding()
+            
             cardView
             errorView
-            newCardButton.padding()
+            newCardButton
         }
         .onAppear(perform: fetchNewCard)
+        .onChange(of: networkManager.pokemonCardImageURL) { oldValue, newValue in
+            if let newURL = newValue {
+                nextCardURL = newURL
+                loadNetworkImage(from: newURL)
+            }
+        }
+        .onChange(of: useLocalAssets) { oldValue, newValue in
+            fetchNewCard()
+        }
     }
     
     private var cardView: some View {
@@ -66,34 +138,37 @@ struct PokemonCardView: View {
     
     private var cardContent: some View {
         Group {
-            if networkManager.isLoading {
-                ProgressView()
-                    .scaleEffect(2)
-            } else if let imageURL = networkManager.pokemonCardImageURL {
-                AsyncImage(url: URL(string: imageURL)) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .cornerRadius(12)
-                            .shadow(color: Color.black.opacity(0.15), radius: 5, x: motion.roll * 5, y: 2 + motion.pitch * 5)
-                            .shadow(color: Color.yellow.opacity(0.3), radius: 15, x: motion.roll * 5, y: 10 + motion.pitch * 5)
-                    case .failure(_):
-                        Text("Failed to load image")
-                    case .empty:
-                        ProgressView()
-                    @unknown default:
-                        EmptyView()
-                    }
-                }
-            } else {
-                Image("pokemon_card")
+            if let assetName = currentLocalAsset {
+                Image(assetName)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .cornerRadius(12)
+                    .transition(.opacity.combined(with: .scale))
+            } else if let image = currentImage {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .transition(.opacity.combined(with: .scale))
+            } else {
+                Color.gray.opacity(0.3)
             }
         }
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.15), radius: 5, x: motion.roll * 5, y: 2 + motion.pitch * 5)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(LinearGradient(colors: [.white, .black.opacity(1)], startPoint: .top, endPoint: .bottom), lineWidth: 1).blendMode(.overlay)
+        )
+        .overlay(
+            Group {
+                if isLoadingNetworkImage {
+                    ProgressView()
+                        .scaleEffect(2)
+                        .frame(width: 300, height: 420)
+                        .background(Color.black.opacity(0.3))
+                        .cornerRadius(12)
+                }
+            }
+        )
     }
     
     private var holographicEffects: some View {
@@ -109,7 +184,7 @@ struct PokemonCardView: View {
                     y: 1.0 - gradientOffset(for: motion.pitch)
                 )
             )
-            .mask(DiamondPattern())
+            .mask(SVGPattern(shape: currentPatternShape))
             .opacity(gradientOpacity())
             .blendMode(.overlay)
             .cornerRadius(12)
@@ -123,7 +198,7 @@ struct PokemonCardView: View {
                     y: UnitPoint.bottom.y + gradientOffset(for: motion.pitch)
                 )
             )
-            .mask(DiamondPattern())
+            .mask(SVGPattern(shape: currentPatternShape))
             .opacity(gradientOpacity())
             .blendMode(.colorDodge)
         }
@@ -140,13 +215,21 @@ struct PokemonCardView: View {
     }
     
     private var newCardButton: some View {
-        Button("Get New Card") {
+        Button("New Card") {
             fetchNewCard()
         }
+        .fontWeight(.medium)
+        .foregroundStyle(.darkBrown)
         .padding()
-        .background(Color.blue)
+        .background(LinearGradient(colors: [.buttonYellow1, .buttonYellow2, .buttonYellow3, .buttonYellow4, .buttonYellow2], startPoint: .top, endPoint: .bottom))
         .foregroundColor(.white)
-        .cornerRadius(8)
+        .cornerRadius(100)
+        .disabled(isLoadingNetworkImage)
+        .opacity(isLoadingNetworkImage ? 0.5 : 1)
+        .overlay(
+            RoundedRectangle(cornerRadius: 100)
+                .stroke(Color.buttonBorder, lineWidth: 3)
+        ).padding()
     }
 }
 

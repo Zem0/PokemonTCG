@@ -21,7 +21,7 @@ class NetworkManager: ObservableObject {
 
     func fetchRandomPokemonCard() {
         // Generate a random page number (assuming there are about 10000 cards in the database)
-        let randomPage = Int.random(in: 1...100)
+        let randomPage = Int.random(in: 1...250)
         
         guard let url = URL(string: "\(baseURL)?page=\(randomPage)&pageSize=1") else {
             self.errorMessage = "Invalid URL"
