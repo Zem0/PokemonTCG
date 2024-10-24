@@ -8,11 +8,15 @@
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var favouritesManager = FavouritesManager()
+
     var body: some View {
-        PokemonCardView()
+        PokemonCardView(favouritesManager: favouritesManager)
     }
 }
 
-#Preview {
-    ContentView()
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+    }
 }
