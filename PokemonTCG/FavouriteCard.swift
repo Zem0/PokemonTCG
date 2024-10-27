@@ -8,9 +8,10 @@
 import Foundation
 import SwiftUI
 
-struct FavouriteCard: Identifiable, Codable {
+struct FavouriteCard: Identifiable, Codable, Equatable {
     let id: String
     let name: String
     let imageURL: String
-    // Add any other properties you want to display in the detail view
+    let setName: String
+    let setSeries: String
 }

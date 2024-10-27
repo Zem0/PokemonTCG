@@ -1,10 +1,3 @@
-//
-//  FavouritesListView.swift
-//  PokemonTCG
-//
-//  Created by Duncan Horne on 20/10/2024.
-//
-
 import SwiftUI
 
 struct FavouritesListView: View {
@@ -22,26 +15,37 @@ struct FavouritesListView: View {
                         ProgressView()
                     }
                     .frame(width: 50, height: 70)
-                    .cornerRadius(5)
-                    
-                    Text(card.name)
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        favouritesManager.removeFavourite(card)
-                    }) {
-                        Image(systemName: "trash")
-                            .foregroundColor(.red)
+                    .cornerRadius(3)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 3)
+                            .strokeBorder(LinearGradient(colors: [.white, .black.opacity(1)], startPoint: .top, endPoint: .bottom), lineWidth: 0.5).blendMode(.overlay)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 3)
+                            .stroke(.black.opacity(0.2), lineWidth: 0.5)
+                    )
+
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("\(card.name)")
+                            .font(.headline)
+                        Text("\(card.setName) (\(card.setSeries))")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
                     }
                 }
                 .contentShape(Rectangle())
                 .onTapGesture {
                     selectedCard = card
                     showingCardDetail = true
-                    print("Card tapped: \(card.name)")
-                    print("selectedCard set to: \(selectedCard?.name ?? "nil")")
-                    print("showingCardDetail set to: \(showingCardDetail)")
+                }
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button(role: .destructive) {
+                        withAnimation {
+                            favouritesManager.removeFavourite(card)
+                        }
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
                 }
             }
         }
@@ -49,13 +53,7 @@ struct FavouritesListView: View {
         .sheet(isPresented: $showingCardDetail) {
             if let card = selectedCard {
                 CardDetailView(card: card)
-            } else {
-                Text("No card selected")
             }
-        }
-        .onChange(of: showingCardDetail) { newValue in
-            print("showingCardDetail changed to: \(newValue)")
-            print("selectedCard is: \(selectedCard?.name ?? "nil")")
         }
     }
 }
@@ -66,7 +64,6 @@ struct CardDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .center, spacing: 20) {
-                
                 AsyncImage(url: URL(string: card.imageURL)) { phase in
                     switch phase {
                     case .empty:
@@ -91,13 +88,13 @@ struct CardDetailView: View {
                 Text("Card ID: \(card.id)")
                     .font(.subheadline)
                 
-                Text("Image URL: \(card.imageURL)")
-                    .font(.caption)
-                    .padding()
+                Text("Set: \(card.setName)")
+                    .font(.subheadline)
+                
+                Text("Series: \(card.setSeries)")
+                    .font(.subheadline)
             }
-        }
-        .onAppear {
-            print("CardDetailView appeared for card: \(card.name)")
+            .padding()
         }
     }
 }
