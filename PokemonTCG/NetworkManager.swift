@@ -2,8 +2,11 @@ import Foundation
 
 struct PokemonCard: Codable {
     let id: String
+    let artist: String?  // Made optional
     let name: String
+    let number: String
     let images: PokemonCardImages
+    let rarity: String?  // Made optional
     let set: PokemonSet
 }
 
@@ -15,6 +18,7 @@ struct PokemonCardImages: Codable {
 struct PokemonSet: Codable {
     let id: String
     let name: String
+    let releaseDate: String
     let series: String
 }
 
@@ -22,9 +26,13 @@ class NetworkManager: ObservableObject {
     @Published var pokemonCardImageURL: String? = nil
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
+    @Published var currentCardArtist: String? = nil
     @Published var currentCardName: String? = nil
+    @Published var currentCardNumber: String? = nil
     @Published var currentCardId: String? = nil
+    @Published var currentCardRarity: String? = nil
     @Published var currentSetName: String? = nil
+    @Published var currentSetReleaseDate: String? = nil
     @Published var currentSetSeries: String? = nil
     
     private let baseURL = "https://api.pokemontcg.io/v2/cards"
@@ -40,13 +48,13 @@ class NetworkManager: ObservableObject {
         
         isLoading = true
         errorMessage = nil
-        print("Fetching Pokémon card from: \(url)")
-
+        
         var request = URLRequest(url: url)
         request.setValue(apiKey, forHTTPHeaderField: "X-Api-Key")
 
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
             DispatchQueue.main.async {
+                guard let self = self else { return }
                 self.isLoading = false
                 
                 if let error = error {
@@ -65,15 +73,16 @@ class NetworkManager: ObservableObject {
                        let firstCard = dataArray.first {
                         let cardData = try JSONSerialization.data(withJSONObject: firstCard)
                         let card = try JSONDecoder().decode(PokemonCard.self, from: cardData)
+                        
                         self.pokemonCardImageURL = card.images.large
+                        self.currentCardArtist = card.artist
+                        self.currentCardNumber = card.number
+                        self.currentCardRarity = card.rarity
                         self.currentCardName = card.name
                         self.currentCardId = card.id
                         self.currentSetName = card.set.name
                         self.currentSetSeries = card.set.series
-                        
-                        print("Fetched Pokémon card image: \(self.pokemonCardImageURL ?? "None")")
-                        print("Card Name: \(card.name), ID: \(card.id)")
-                        print("Set: \(card.set.name) (\(card.set.series))")
+                        self.currentSetReleaseDate = card.set.releaseDate
                     } else {
                         throw NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Unexpected JSON structure"])
                     }

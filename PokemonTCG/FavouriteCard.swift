@@ -14,4 +14,8 @@ struct FavouriteCard: Identifiable, Codable, Equatable {
     let imageURL: String
     let setName: String
     let setSeries: String
+    let number: String
+    let artist: String
+    let rarity: String
+    let setReleaseDate: String
 }

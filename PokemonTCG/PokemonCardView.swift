@@ -1,8 +1,6 @@
 import SwiftUI
 import CoreMotion
 
-//import FavouriteCard
-//import FavouritesManager
 
 class MotionManager: ObservableObject {
     private var motionManager = CMMotionManager()
@@ -40,24 +38,18 @@ struct PokemonCardView: View {
     @State private var isNewCardFullyLoaded: Bool = true
     @State private var currentImage: UIImage?
     @State private var nextImage: UIImage?
+    @State private var currentCardArtist: String?
+    @State private var currentCardRarity: String?
     @State private var currentCardName: String?
+    @State private var currentCardNumber: String?
     @State private var currentCardId: String?
     @State private var showingFavorites = false
     @State private var setName: String?
     @State private var setSeries: String?
+    @State private var setReleaseDate: String?
     
     // List of local asset names
     private let localAssets = ["Charizard", "CharizardVmax", "DragapultVmax", "Eevee", "Gengar", "Obstagoon", "Steelix", "LugiaV", "KinglerVmax", "Mewtwo", "PikachuVmax", "PikachuEX", "PikachuEX2", "PikachuEX3", "Flapple", "Archaludon"]
-    
-    func gradientOffset(for value: Double) -> CGFloat {
-        return CGFloat(value * 0.4)
-    }
-    
-    func gradientOpacity() -> Double {
-        let motionMagnitude = sqrt(motion.pitch * motion.pitch + motion.roll * motion.roll)
-        let maxMotionMagnitude = 1.0
-        return min(max(motionMagnitude * 0.8 / maxMotionMagnitude, 0), 0.8)
-    }
     
     func fetchNewCard() {
         guard !isLoadingNetworkImage && isNewCardFullyLoaded else { return }
@@ -94,6 +86,7 @@ struct PokemonCardView: View {
                     withAnimation(.easeInOut(duration: 0.5)) {
                         self.currentImage = image
                         self.currentCardURL = url
+                        self.currentCardNumber = self.networkManager.currentCardNumber
                         self.currentCardName = self.networkManager.currentCardName
                         self.currentCardId = self.networkManager.currentCardId
                         self.currentLocalAsset = nil
@@ -113,10 +106,15 @@ struct PokemonCardView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack {
+                PokemonCardComponent(
+                    image: currentImage,
+                    assetName: currentLocalAsset,
+                    isInteractive: true,
+                    onDoubleTap: { fetchNewCard() }
+                )
                 
-                cardView
                 errorView
                 
                 HStack {
@@ -131,28 +129,34 @@ struct PokemonCardView: View {
                     }
                     .buttonStyle(.glossy(theme: .yellow))
                     
-                   Button(role: .destructive, action: {
-                       if let id = currentCardId,
-                              let name = currentCardName,
-                              let url = currentCardURL {
-                                let card = FavouriteCard(
-                                   id: id,
-                                   name: name,
-                                   imageURL: url,
-                                   setName: networkManager.currentSetName ?? "",
-                                   setSeries: networkManager.currentSetSeries ?? ""
-                                )
-                               if favouritesManager.isFavorite(card) {
-                                   favouritesManager.removeFavourite(card)
-                               } else {
-                                   favouritesManager.addFavourite(card)
-                               }
-                   }}) {
-                      Label(
-                         title: { EmptyView() },
-                         icon: { Image(systemName: isFavorited ? "heart.fill" : "heart") }
-                      )
-                   }
+                    Button(role: .destructive, action: {
+                        if let id = currentCardId,
+                           let name = currentCardName,
+                           let number = currentCardNumber,
+                           let url = currentCardURL {
+                            let card = FavouriteCard(
+                                id: id,
+                                name: name,
+                                imageURL: url,
+                                setName: networkManager.currentSetName ?? "",
+                                setSeries: networkManager.currentSetSeries ?? "",
+                                number: number,
+                                artist: networkManager.currentCardArtist ?? "",
+                                rarity: networkManager.currentCardRarity ?? "",
+                                setReleaseDate: networkManager.currentSetReleaseDate ?? ""
+                            )
+                            if favouritesManager.isFavorite(card) {
+                                favouritesManager.removeFavourite(card)
+                            } else {
+                                favouritesManager.addFavourite(card)
+                            }
+                        }
+                    }) {
+                        Label(
+                            title: { EmptyView() },
+                            icon: { Image(systemName: isFavorited ? "heart.fill" : "heart") }
+                        )
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
@@ -160,19 +164,17 @@ struct PokemonCardView: View {
                 .disabled(isLoadingNetworkImage)
                 .opacity(isLoadingNetworkImage ? 0.5 : 1)
                 
-                NavigationLink(destination: FavouritesListView(favouritesManager: favouritesManager), isActive: $showingFavorites) {
-                    EmptyView()
-                }
                 Toggle("Use Local Images", isOn: $useLocalAssets)
                     .padding(16)
                     .background(Color(uiColor: .systemGray6))
                     .foregroundColor(Color(uiColor: .systemGray))
                     .font(.system(size: 14))
-                    .cornerRadius(16).cornerRadius(16)
+                    .cornerRadius(16)
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
                             .strokeBorder(Color(uiColor: .systemGray5), lineWidth: 2)
-                    ).padding(20)
+                    )
+                    .padding(20)
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -181,14 +183,11 @@ struct PokemonCardView: View {
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showingFavorites = true
-                    } label: {
-                        Label("", systemImage: "heart")
+                    NavigationLink(destination: FavouritesListView(favouritesManager: favouritesManager)) {
+                        Image(systemName: "heart")
                     }
                 }
             }
-
         }
         .environmentObject(favouritesManager)
         .onAppear(perform: fetchNewCard)
@@ -196,89 +195,12 @@ struct PokemonCardView: View {
             if let newURL = newValue {
                 nextCardURL = newURL
                 loadNetworkImage(from: newURL)
-                // Update set information
                 setName = networkManager.currentSetName
                 setSeries = networkManager.currentSetSeries
             }
         }
         .onChange(of: useLocalAssets) { oldValue, newValue in
             fetchNewCard()
-        }
-    }
-    
-    // MARK: - Card View
-    
-    private var cardView: some View {
-        ZStack {
-            cardContent
-            holographicEffects
-        }
-        .frame(width: 350, height: 490)
-        .gesture(
-            TapGesture(count: 2)
-                .onEnded { _ in
-                    fetchNewCard()
-                }
-        )
-    }
-    
-    // MARK: - Card Content
-    
-    private var cardContent: some View {
-        Group {
-            if let assetName = currentLocalAsset {
-                Image(assetName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .transition(.opacity.combined(with: .scale))
-            } else if let image = currentImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .transition(.opacity.combined(with: .scale))
-            } else {
-                Color.gray.opacity(0.3)
-            }
-        }
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.15), radius: 6, x: motion.roll * 2, y: 5 + motion.pitch * 2)
-        .shadow(color: Color.black.opacity(0.10), radius: 1, x: motion.roll * 2, y: 3 + motion.pitch * 2)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(LinearGradient(colors: [.white, .black.opacity(1)], startPoint: .top, endPoint: .bottom), lineWidth: 1.5).blendMode(.overlay)
-        )
-    }
-    
-    private var holographicEffects: some View {
-        Group {
-            LinearGradient(
-                gradient: Gradient(colors: [.blue, .purple, .red, .yellow]),
-                startPoint: UnitPoint(
-                    x: 0.1 + gradientOffset(for: motion.roll),
-                    y: 0 + gradientOffset(for: motion.pitch)
-                ),
-                endPoint: UnitPoint(
-                    x: 1.0 - gradientOffset(for: motion.roll),
-                    y: 1.0 - gradientOffset(for: motion.pitch)
-                )
-            )
-            .mask(SVGPattern(shape: currentPatternShape))
-            .opacity(gradientOpacity())
-            .blendMode(.overlay)
-            .cornerRadius(12)
-            
-            LinearGradient(colors: [Color.grBlack, Color.grBlue, Color.grBlack, Color.grBlue, Color.grBlack, Color.grBlue, Color.grBlack, Color.grBlue, Color.grBlack, Color.grBlue],
-                startPoint: UnitPoint(
-                    x: UnitPoint.topLeading.x + gradientOffset(for: motion.roll),
-                    y: UnitPoint.topLeading.y + gradientOffset(for: motion.pitch)
-                ), endPoint: UnitPoint(
-                    x: UnitPoint.bottom.x + gradientOffset(for: motion.roll),
-                    y: UnitPoint.bottom.y + gradientOffset(for: motion.pitch)
-                )
-            )
-            .mask(SVGPattern(shape: currentPatternShape))
-            .opacity(gradientOpacity())
-            .blendMode(.colorDodge)
         }
     }
     
@@ -304,9 +226,6 @@ struct PokemonCardView: View {
         .cornerRadius(100)
         .disabled(isLoadingNetworkImage)
         .opacity(isLoadingNetworkImage ? 0.5 : 1)
-//        .overlay(
-//            RoundedRectangle(cornerRadius: 100).frame(height: 30), alignment: .topLeading
-//        )
         .overlay(
             RoundedRectangle(cornerRadius: 100)
                 .fill(LinearGradient(colors: [.white.opacity(0.05), .white.opacity(0.8)], startPoint: .top, endPoint: .bottom))
@@ -324,49 +243,25 @@ struct PokemonCardView: View {
         ).padding()
     }
     
-    private var favouriteButton: some View {
-        Button(action: {
-            if let id = currentCardId,
-               let name = currentCardName,
-               let url = currentCardURL,
-               let setName = networkManager.currentSetName,
-               let setSeries = networkManager.currentSetSeries {
-                let card = FavouriteCard(
-                    id: id,
-                    name: name,
-                    imageURL: url,
-                    setName: setName,
-                    setSeries: setSeries
-                )
-                if favouritesManager.isFavorite(card) {
-                    favouritesManager.removeFavourite(card)
-                } else {
-                    favouritesManager.addFavourite(card)
-                }
-            }
-        }) {
-            Image(systemName: isFavorited ? "heart.fill" : "heart")
-                .foregroundColor(.white)
-                .padding()
-                .background(isFavorited ? LinearGradient(colors: [.buttonYellow1, .buttonYellow2, .buttonYellow3, .buttonYellow4, .buttonYellow2], startPoint: .top, endPoint: .bottom) : LinearGradient(colors: [.buttonGrey1, .buttonGrey2, .buttonGrey3, .buttonGrey4, .buttonGrey5], startPoint: .top, endPoint: .bottom))
-                .clipShape(Circle())
-                .overlay(
-                    Circle()
-                        .strokeBorder(LinearGradient(colors: [.buttonGreyInsideBorderTop, .buttonGreyInsideBorderMiddle, .buttonGreyInsideBorderBottom.opacity(1)], startPoint: .top, endPoint: .bottom), lineWidth: 3)
-                )
-                .overlay(
-                    Circle()
-                        .stroke(isFavorited ? Color.yellow : Color.buttonGreyBorder, lineWidth: 1.8)
-                )
-        }
-        .disabled(currentCardId == nil || currentCardName == nil || currentCardURL == nil)
-    }
-    
     private var isFavorited: Bool {
-        guard let id = currentCardId, let name = currentCardName, let url = currentCardURL else {
+        guard let id = currentCardId,
+              let name = currentCardName,
+              let number = currentCardNumber,
+              let url = currentCardURL else {
             return false
         }
-        let card = FavouriteCard(id: id, name: name, imageURL: url, setName: "", setSeries: "")
+        
+        let card = FavouriteCard(
+            id: id,
+            name: name,
+            imageURL: url,
+            setName: networkManager.currentSetName ?? "",
+            setSeries: networkManager.currentSetSeries ?? "",
+            number: number,
+            artist: networkManager.currentCardArtist ?? "Unknown",
+            rarity: networkManager.currentCardRarity ?? "Unknown",
+            setReleaseDate: networkManager.currentSetReleaseDate ?? ""
+        )
         return favouritesManager.isFavorite(card)
     }
 }
