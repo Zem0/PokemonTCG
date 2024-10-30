@@ -19,3 +19,17 @@ struct FavouriteCard: Identifiable, Codable, Equatable {
     let rarity: String
     let setReleaseDate: String
 }
+
+extension FavouriteCard {
+    static let sampleCard = FavouriteCard(
+        id: "swsh1-1",
+        name: "Pikachu EX",
+        imageURL: "PikachuEX",
+        setName: "SM Black Star Promos",
+        setSeries: "Sun & Moon",
+        number: "1/202",
+        artist: "Kenji Yamamoto",
+        rarity: "Ultra Rare",
+        setReleaseDate: "2020-02-07"
+    )
+}

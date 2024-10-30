@@ -74,67 +74,88 @@ struct CardDetailView: View {
     let card: FavouriteCard
     
     var body: some View {
-        List {
-            Section {
-                PokemonCardComponent(
-                    imageURL: card.imageURL,
-                    isInteractive: true
-                )
-                .frame(maxWidth: .infinity)
-                .listRowInsets(EdgeInsets())
-                .listRowBackground(Color.clear)
-                .padding(.bottom, 20)
-                .padding(.horizontal, 40)
-            }
+        VStack {
+            PokemonCardComponent(
+                imageURL: card.imageURL,
+                isInteractive: true
+            )
+            .frame(maxWidth: .infinity)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .padding(.bottom, 20)
+            .padding(.horizontal, 40)
             
-            Section("Card Details") {
-                HStack {
-                    Text(card.name)
-                }
-                
-                HStack {
-                    Text("Number")
-                    Spacer()
-                    Text(card.number)
-                        .foregroundColor(.secondary)
-                }
-                
-                HStack {
-                    Text("Set")
-                    Spacer()
-                    Text(card.setName)
-                        .foregroundColor(.secondary)
-                }
-                
-                HStack {
-                    Text("Series")
-                    Spacer()
-                    Text(card.setSeries)
-                        .foregroundColor(.secondary)
-                }
-                
-                HStack {
-                    Text("Artist")
-                    Spacer()
-                    Text(card.artist)
-                        .foregroundColor(.secondary)
-                }
-                
-                HStack {
-                    Text("Rarity")
-                    Spacer()
-                    Text(card.rarity)
-                        .foregroundColor(.secondary)
-                }
-                
-                HStack {
-                    Text("Release Date")
-                    Spacer()
-                    Text(card.setReleaseDate)
-                        .foregroundColor(.secondary)
+            VStack {
+                VStack(spacing: 0) {
+                    HStack {
+                        Text(card.name)
+                        Spacer()
+                        Text(card.number)
+                            .padding(4)
+                            .font(.system(size: 10))
+//                            .frame(alignment: .leading)
+                            .background(Color(uiColor: .systemGray2))
+                            .foregroundColor(.white)
+                            .cornerRadius(4)
+                            
+                            
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
+                    .background(Color(uiColor: .systemGray5))
+                    Divider()
+                     .frame(height: 1)
+                     .overlay(Color(uiColor: .systemGray3))
+                    
+                    VStack{
+                        HStack {
+                            Text("Artist")
+                            Spacer()
+                            Text(card.artist)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(2)
+                        
+                        HStack {
+                            Text("Rarity")
+                            Spacer()
+                            Text(card.rarity)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(2)
+                        
+                        HStack {
+                            Text("Release Date")
+                            Spacer()
+                            Text(card.setReleaseDate)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(2)
+                    }
+                    .padding(10)
+
+                    Divider()
+                     .frame(height: 1)
+                     .overlay(Color(uiColor: .systemGray3))
+                    HStack {
+                        Text(card.setSeries)
+                        Text(card.setName)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
+            .background(Color(uiColor: .systemGray6))
+            .font(.system(size: 12))
+            .cornerRadius(8)
+            .padding()
         }
-        .listStyle(InsetGroupedListStyle())
+    }
+}
+
+#Preview {
+    NavigationStack {
+        CardDetailView(card: FavouriteCard.sampleCard)
     }
 }

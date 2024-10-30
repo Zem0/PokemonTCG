@@ -53,7 +53,7 @@ struct SVGPattern: View {
                     }
                 }
             }
-            .frame(width: 300, height: 420)
+            .frame(width: 350, height: 490)
         }
     }
 }
