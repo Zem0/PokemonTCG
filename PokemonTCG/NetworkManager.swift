@@ -2,11 +2,11 @@ import Foundation
 
 struct PokemonCard: Codable {
     let id: String
-    let artist: String?  // Made optional
+    let artist: String?
     let name: String
     let number: String
     let images: PokemonCardImages
-    let rarity: String?  // Made optional
+    let rarity: String?
     let set: PokemonSet
 }
 
@@ -20,6 +20,12 @@ struct PokemonSet: Codable {
     let name: String
     let releaseDate: String
     let series: String
+    let images: SetImages
+}
+
+struct SetImages: Codable {
+    let symbol: String
+    let logo: String
 }
 
 class NetworkManager: ObservableObject {
@@ -34,6 +40,8 @@ class NetworkManager: ObservableObject {
     @Published var currentSetName: String? = nil
     @Published var currentSetReleaseDate: String? = nil
     @Published var currentSetSeries: String? = nil
+    @Published var currentSetSymbolURL: String? = nil
+    @Published var currentSetLogoURL: String? = nil
     
     private let baseURL = "https://api.pokemontcg.io/v2/cards"
     private let apiKey = "03c59aab-400f-4635-89ab-caf237f511b5"
@@ -83,6 +91,8 @@ class NetworkManager: ObservableObject {
                         self.currentSetName = card.set.name
                         self.currentSetSeries = card.set.series
                         self.currentSetReleaseDate = card.set.releaseDate
+                        self.currentSetSymbolURL = card.set.images.symbol
+                        self.currentSetLogoURL = card.set.images.logo
                     } else {
                         throw NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Unexpected JSON structure"])
                     }

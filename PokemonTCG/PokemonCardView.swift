@@ -47,23 +47,49 @@ struct PokemonCardView: View {
     @State private var setName: String?
     @State private var setSeries: String?
     @State private var setReleaseDate: String?
+    @State private var setSymbolURL: String?
+    @State private var setLogoURL: String?
     
     // List of local asset names
-    private let localAssets = ["Charizard", "CharizardVmax", "DragapultVmax", "Eevee", "Gengar", "Obstagoon", "Steelix", "LugiaV", "KinglerVmax", "Mewtwo", "PikachuVmax", "PikachuEX", "PikachuEX2", "PikachuEX3", "Flapple", "Archaludon"]
+    private let localAssets = ["Charizard", "CharizardVmax", "DragapultVmax", "Eevee", "Gengar", "Obstagoon", "Steelix", "LugiaV", "KinglerVmax", "Mewtwo", "PikachuVmax", "PikachuEX", "PikachuEX2", "PikachuEX3", "Flapple", "Archaludon", "Deoxys", "ZoroarkV", "ZoroarkVstar", "ZoroarkVstar2"]
+    
+    private let wordsToCheckFor = ["Holo", "Shiny"]
+    
+//    func fetchNewCard() {
+//        guard !isLoadingNetworkImage && isNewCardFullyLoaded else { return }
+//        
+//        isNewCardFullyLoaded = false
+//        nextPatternShape = PatternShape.random()
+//        
+//        if useLocalAssets {
+//            withAnimation(.easeInOut(duration: 0.3)) {
+//                currentLocalAsset = localAssets.randomElement()
+//                currentCardURL = nil
+//                currentImage = nil
+//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+//                    currentPatternShape = nextPatternShape
+//                    isNewCardFullyLoaded = true
+//                }
+//            }
+//        } else {
+//            isLoadingNetworkImage = true
+//            networkManager.fetchRandomPokemonCard()
+//        }
+//    }
     
     func fetchNewCard() {
         guard !isLoadingNetworkImage && isNewCardFullyLoaded else { return }
         
         isNewCardFullyLoaded = false
-        nextPatternShape = PatternShape.random()
-        
+        nextPatternShape = PatternShape.random()  // Generate a new pattern each time
+
         if useLocalAssets {
             withAnimation(.easeInOut(duration: 0.3)) {
                 currentLocalAsset = localAssets.randomElement()
                 currentCardURL = nil
                 currentImage = nil
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    currentPatternShape = nextPatternShape
+                    currentPatternShape = nextPatternShape  // Apply the new pattern shape
                     isNewCardFullyLoaded = true
                 }
             }
@@ -90,6 +116,8 @@ struct PokemonCardView: View {
                         self.currentCardName = self.networkManager.currentCardName
                         self.currentCardId = self.networkManager.currentCardId
                         self.currentLocalAsset = nil
+                        self.setSymbolURL = self.networkManager.currentSetSymbolURL
+                        self.setLogoURL = self.networkManager.currentSetLogoURL
                     }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         self.currentPatternShape = self.nextPatternShape
@@ -106,12 +134,14 @@ struct PokemonCardView: View {
     }
     
     var body: some View {
+        
         NavigationStack {
             VStack {
                 PokemonCardComponent(
                     image: currentImage,
                     assetName: currentLocalAsset,
                     isInteractive: true,
+                    patternShape: currentPatternShape,
                     onDoubleTap: { fetchNewCard() }
                 )
                 
@@ -143,7 +173,9 @@ struct PokemonCardView: View {
                                 number: number,
                                 artist: networkManager.currentCardArtist ?? "",
                                 rarity: networkManager.currentCardRarity ?? "",
-                                setReleaseDate: networkManager.currentSetReleaseDate ?? ""
+                                setReleaseDate: networkManager.currentSetReleaseDate ?? "",
+                                setSymbolURL: setSymbolURL ?? "",
+                                setLogoURL: setLogoURL ?? ""
                             )
                             if favouritesManager.isFavorite(card) {
                                 favouritesManager.removeFavourite(card)
@@ -197,6 +229,8 @@ struct PokemonCardView: View {
                 loadNetworkImage(from: newURL)
                 setName = networkManager.currentSetName
                 setSeries = networkManager.currentSetSeries
+                setSymbolURL = networkManager.currentSetSymbolURL
+                setLogoURL = networkManager.currentSetLogoURL
             }
         }
         .onChange(of: useLocalAssets) { oldValue, newValue in
@@ -260,7 +294,9 @@ struct PokemonCardView: View {
             number: number,
             artist: networkManager.currentCardArtist ?? "Unknown",
             rarity: networkManager.currentCardRarity ?? "Unknown",
-            setReleaseDate: networkManager.currentSetReleaseDate ?? ""
+            setReleaseDate: networkManager.currentSetReleaseDate ?? "",
+            setSymbolURL: networkManager.currentSetSymbolURL ?? "",
+            setLogoURL: networkManager.currentSetLogoURL ?? ""
         )
         return favouritesManager.isFavorite(card)
     }

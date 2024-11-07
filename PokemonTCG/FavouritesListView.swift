@@ -72,7 +72,7 @@ struct FavouritesListView: View {
 
 struct CardDetailView: View {
     let card: FavouriteCard
-    
+    @ScaledMetric(relativeTo: .body) private var fontSize: CGFloat = 20
     var body: some View {
         VStack {
             PokemonCardComponent(
@@ -89,6 +89,7 @@ struct CardDetailView: View {
                 VStack(spacing: 0) {
                     HStack {
                         Text(card.name)
+                            .fontWeight(.semibold)
                         Spacer()
                         Text(card.number)
                             .padding(4)
@@ -97,8 +98,10 @@ struct CardDetailView: View {
                             .background(Color(uiColor: .systemGray2))
                             .foregroundColor(.white)
                             .cornerRadius(4)
-                            
-                            
+                        if card.rarity.localizedCaseInsensitiveContains("Holo") || card.rarity.localizedCaseInsensitiveContains("Shiny") {
+                            Image(systemName: "sparkles")
+                                .fontWeight(.black)
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(10)
@@ -109,10 +112,9 @@ struct CardDetailView: View {
                     
                     VStack{
                         HStack {
-                            Text("Artist")
-                            Spacer()
-                            Text(card.artist)
+                            Text("Illustration by " + card.artist)
                                 .foregroundColor(.secondary)
+                                
                         }
                         .padding(2)
                         
@@ -138,18 +140,40 @@ struct CardDetailView: View {
                      .frame(height: 1)
                      .overlay(Color(uiColor: .systemGray3))
                     HStack {
-                        Text(card.setSeries)
-                        Text(card.setName)
-                            .foregroundColor(.secondary)
+                        Text(card.setSeries + " -- " + card.setName)
+                        Spacer()
+                        Divider()
+                         .frame(width: 1)
+                         .frame(maxHeight: 20)
+                         .overlay(Color(uiColor: .systemGray3))
+                        AsyncImage(url: URL(string: card.setSymbolURL)) { image in
+                            image.resizable()
+                                .scaledToFit()
+                                .frame(height: 20)
+                        } placeholder: {
+                            ProgressView()
+                        }
+                        Divider()
+                         .frame(width: 1)
+                         .frame(maxHeight: 20)
+                         .overlay(Color(uiColor: .systemGray3))
+                        AsyncImage(url: URL(string: card.setLogoURL)) { image in
+                            image.resizable()
+                                .scaledToFit()
+                                .frame(height: 20)
+                        } placeholder: {
+                            ProgressView()
+                        }
                     }
+                    .foregroundColor(.secondary)
                     .padding(10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+//                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .background(Color(uiColor: .systemGray6))
             .font(.system(size: 12))
             .cornerRadius(8)
-            .padding()
+            .padding(22)
         }
     }
 }

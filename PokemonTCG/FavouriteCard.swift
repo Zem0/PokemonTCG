@@ -18,6 +18,8 @@ struct FavouriteCard: Identifiable, Codable, Equatable {
     let artist: String
     let rarity: String
     let setReleaseDate: String
+    let setSymbolURL: String
+    let setLogoURL: String
 }
 
 extension FavouriteCard {
@@ -29,7 +31,9 @@ extension FavouriteCard {
         setSeries: "Sun & Moon",
         number: "1/202",
         artist: "Kenji Yamamoto",
-        rarity: "Ultra Rare",
-        setReleaseDate: "2020-02-07"
+        rarity: "Ultra Rare Shiny",
+        setReleaseDate: "2020-02-07",
+        setSymbolURL: "https://www.pokemon.com/us/black-star-promos/symbols/",
+        setLogoURL: "https://www.pokemon.com/us/black-star-promos/logos/"
     )
 }
