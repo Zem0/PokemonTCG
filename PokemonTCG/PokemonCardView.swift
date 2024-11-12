@@ -1,28 +1,27 @@
 import SwiftUI
 import CoreMotion
 
-
-class MotionManager: ObservableObject {
-    private var motionManager = CMMotionManager()
-    @Published var pitch: Double = 0.0
-    @Published var roll: Double = 0.0
-
-    init() {
-        startMotionUpdates()
-    }
-
-    func startMotionUpdates() {
-        if motionManager.isDeviceMotionAvailable {
-            motionManager.deviceMotionUpdateInterval = 1.0 / 30.0
-            motionManager.startDeviceMotionUpdates(to: .main) { (motion, error) in
-                if let motion = motion {
-                    self.pitch = motion.attitude.pitch
-                    self.roll = motion.attitude.roll
-                }
-            }
-        }
-    }
-}
+//class MotionManager: ObservableObject {
+//    private var motionManager = CMMotionManager()
+//    @Published var pitch: Double = 0.0
+//    @Published var roll: Double = 0.0
+//
+//    init() {
+//        startMotionUpdates()
+//    }
+//
+//    func startMotionUpdates() {
+//        if motionManager.isDeviceMotionAvailable {
+//            motionManager.deviceMotionUpdateInterval = 1.0 / 30.0
+//            motionManager.startDeviceMotionUpdates(to: .main) { (motion, error) in
+//                if let motion = motion {
+//                    self.pitch = motion.attitude.pitch
+//                    self.roll = motion.attitude.roll
+//                }
+//            }
+//        }
+//    }
+//}
 
 struct PokemonCardView: View {
     @StateObject private var motion = MotionManager()

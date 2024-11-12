@@ -11,7 +11,8 @@ struct ContentView: View {
     @StateObject private var favouritesManager = FavouritesManager()
 
     var body: some View {
-        PokemonCardView(favouritesManager: favouritesManager)
+//        PokemonCardView(favouritesManager: favouritesManager)
+        PokemonTabView(favouritesManager: favouritesManager)
     }
 }
 

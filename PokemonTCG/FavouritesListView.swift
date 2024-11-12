@@ -72,12 +72,15 @@ struct FavouritesListView: View {
 
 struct CardDetailView: View {
     let card: FavouriteCard
+    @StateObject var networkManager = NetworkManager()
     @ScaledMetric(relativeTo: .body) private var fontSize: CGFloat = 20
+    
     var body: some View {
         VStack {
             PokemonCardComponent(
                 imageURL: card.imageURL,
-                isInteractive: true
+                isInteractive: true,
+                rarity: card.rarity
             )
             .frame(maxWidth: .infinity)
             .listRowInsets(EdgeInsets())

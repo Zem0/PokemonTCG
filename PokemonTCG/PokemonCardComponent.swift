@@ -14,6 +14,7 @@ struct PokemonCardComponent: View {
     var assetName: String?
     var isInteractive: Bool
     var patternShape: PatternShape
+    var rarity: String?
     var onDoubleTap: (() -> Void)?
 
     @StateObject private var motion = MotionManager()
@@ -23,12 +24,14 @@ struct PokemonCardComponent: View {
          assetName: String? = nil,
          isInteractive: Bool = false,
          patternShape: PatternShape = .diamond,
+         rarity: String? = nil,
          onDoubleTap: (() -> Void)? = nil) {
         self.image = image
         self.imageURL = imageURL
         self.assetName = assetName
         self.isInteractive = isInteractive
         self.patternShape = patternShape
+        self.rarity = rarity
         self.onDoubleTap = onDoubleTap
     }
 
@@ -50,8 +53,9 @@ struct PokemonCardComponent: View {
                 .opacity(0.7)
                 .offset(y: 10)
             cardContent
-            if isInteractive {
+            if isInteractive && (rarity == "Rare" || rarity == "Rare Holo" || rarity == "Full Art" || rarity == "Rare Holo GX") {
                 holographicEffects
+                    .transition(.opacity)
             }
         }
         .frame(width: 350, height: 490)
@@ -199,6 +203,7 @@ struct PokemonCardComponent_Previews: PreviewProvider {
             PokemonCardComponent(
                 assetName: "PikachuEX",
                 isInteractive: true,
+                rarity: "Rare Holo",
                 onDoubleTap: { print("Double tapped!") }
             )
         }
